@@ -1,7 +1,12 @@
 package com.sedmelluq.lava.common.natives.architecture;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 public enum DefaultOperatingSystemTypes implements OperatingSystemType {
   LINUX("linux", "lib", ".so"),
+  LINUX_MUSL("linux-musl", "lib", ".so"),
   WINDOWS("win", "", ".dll"),
   DARWIN("darwin", "lib", ".dylib"),
   SOLARIS("solaris", "lib", ".so");
@@ -31,6 +36,20 @@ public enum DefaultOperatingSystemTypes implements OperatingSystemType {
     return libraryFileSuffix;
   }
 
+  private static boolean isMusl() throws IOException {
+    Process proc = Runtime.getRuntime().exec("ldd --version");
+
+    BufferedReader std = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+    String s;
+    boolean isMusl = false;
+    while ((s = std.readLine()) != null) {
+      if (s.contains("musl") || s.contains("ld-musl")) isMusl = true;
+    }
+
+    return isMusl;
+  }
+
   public static OperatingSystemType detect() {
     String osFullName = System.getProperty("os.name");
 
@@ -41,7 +60,15 @@ public enum DefaultOperatingSystemTypes implements OperatingSystemType {
     } else if (osFullName.startsWith("Solaris")) {
       return SOLARIS;
     } else if (osFullName.toLowerCase().startsWith("linux")) {
-      return LINUX;
+      try {
+        if (isMusl()) {
+          return LINUX_MUSL;
+        } else {
+          return LINUX;
+        }
+      } catch (IOException e) {
+        return LINUX;
+      }
     } else {
       throw new IllegalArgumentException("Unknown operating system: " + osFullName);
     }
