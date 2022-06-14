@@ -1,5 +1,9 @@
 package com.sedmelluq.lava.common.natives.architecture;
 
+import jdk.internal.net.http.common.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,6 +14,8 @@ public enum DefaultOperatingSystemTypes implements OperatingSystemType {
   WINDOWS("win", "", ".dll"),
   DARWIN("darwin", "lib", ".dylib"),
   SOLARIS("solaris", "lib", ".so");
+
+  private final static Logger log = LoggerFactory.getLogger(DefaultOperatingSystemTypes.class);
 
   private final String identifier;
   private final String libraryFilePrefix;
@@ -44,6 +50,7 @@ public enum DefaultOperatingSystemTypes implements OperatingSystemType {
     String s;
     boolean isMusl = false;
     while ((s = std.readLine()) != null) {
+      log.info(s);
       if (s.contains("musl") || s.contains("ld-musl")) isMusl = true;
     }
 
@@ -62,6 +69,7 @@ public enum DefaultOperatingSystemTypes implements OperatingSystemType {
     } else if (osFullName.toLowerCase().startsWith("linux")) {
       try {
         if (isMusl()) {
+          log.info("Musl Linux System detected");
           return LINUX_MUSL;
         } else {
           return LINUX;
